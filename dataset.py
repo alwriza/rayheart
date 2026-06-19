@@ -2,9 +2,14 @@ import ast
 import numpy as np
 import pandas as pd
 import wfdb
+from pathlib import Path
 
-PTBXL_ROOT = "/Users/rauanakendirbayeva/Desktop/rayheart/ptb-xl-a-large-publicly-available-electrocardiography-dataset-1-2/"
-LABELS_CSV = "ptbxl_master.csv"         
+
+BASE_DIR = Path(__file__).resolve().parent
+PTBXL_ROOT = BASE_DIR / "ptb-xl-a-large-publicly-available-electrocardiography-dataset-1-2"
+LABELS_CSV = BASE_DIR / "ptbxl_master.csv"   
+OUT_DIR = BASE_DIR / "processed"
+OUT_DIR.mkdir(exist_ok=True) 
 SUPER = ["NORM", "MI", "STTC", "CD", "HYP"]
 SAMPLING = 100                            
 
@@ -13,7 +18,7 @@ def load_signals(filenames):
     
     sigs = []
     for i, f in enumerate(filenames):
-        signal, _meta = wfdb.rdsamp(PTBXL_ROOT + f)
+        signal, _meta = wfdb.rdsamp(str(PTBXL_ROOT / f))
         sigs.append(signal.astype(np.float32))
         if (i + 1) % 2000 == 0:
             print(f"  loaded {i + 1}/{len(filenames)}")
@@ -39,12 +44,12 @@ def main():
 
     for name, (X, Y) in splits.items():
         Xn = (X - mean) / std
-        np.save(f"X_{name}.npy", Xn.astype(np.float32))
-        np.save(f"Y_{name}.npy", Y)
+        np.save(OUT_DIR / f"X_{name}.npy", Xn.astype(np.float32))
+        np.save(OUT_DIR / f"Y_{name}.npy", Y)
         print(f"saved X_{name}.npy {Xn.shape}  Y_{name}.npy {Y.shape}")
 
-    np.save("lead_mean.npy", mean)
-    np.save("lead_std.npy", std)
+    np.save(OUT_DIR / "lead_mean.npy", mean)
+    np.save(OUT_DIR / "lead_std.npy", std)
     print("\nDone")
 
 
