@@ -6,9 +6,9 @@ from pathlib import Path
 
 
 BASE_DIR = Path(__file__).resolve().parent
-PTBXL_ROOT = BASE_DIR / "ptb-xl-a-large-publicly-available-electrocardiography-dataset-1-2"
+PTBXL_ROOT = BASE_DIR / "ptb-xl-a-large-publicly-available-electrocardiography-dataset-1.0.3"
 LABELS_CSV = BASE_DIR / "ptbxl_master.csv"   
-OUT_DIR = BASE_DIR / "processed"
+OUT_DIR = BASE_DIR / "processed data"
 OUT_DIR.mkdir(exist_ok=True) 
 SUPER = ["NORM", "MI", "STTC", "CD", "HYP"]
 SAMPLING = 100                            

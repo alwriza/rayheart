@@ -3,10 +3,13 @@ import torch
 import torch.nn as nn
 from torch.utils.data import TensorDataset, DataLoader
 from sklearn.metrics import roc_auc_score
-
-
+from pathlib import Path
 from tsai.models.XResNet1d import xresnet1d101
 
+BASE_DIR = Path(__file__).resolve().parent
+DATA = BASE_DIR / "processed data"
+MODEL = BASE_DIR / "trained model"
+MODEL.mkdir(exist_ok=True)
 SUPER = ["NORM", "MI", "STTC", "CD", "HYP"]
 DEVICE = "cuda" if torch.cuda.is_available() else "cpu"
 EPOCHS = 50
@@ -16,8 +19,8 @@ PATIENCE = 8
 
 
 def load_split(name):
-    X = np.load(f"X_{name}.npy")            # (N, 1000, 12) from make_dataset.py
-    Y = np.load(f"Y_{name}.npy")            # (N, 5)
+    X = np.load(DATA / f"X_{name}.npy")            # (N, 1000, 12) from make_dataset.py
+    Y = np.load(DATA / f"Y_{name}.npy")            # (N, 5)
     X = np.transpose(X, (0, 2, 1))          # -> (N, 12, 1000): conv wants (batch, channels, length)
     return torch.tensor(X, dtype=torch.float32), torch.tensor(Y, dtype=torch.float32)
 
@@ -75,7 +78,7 @@ def main():
 
         if v_macro > best:
             best, bad_epochs = v_macro, 0
-            torch.save(model.state_dict(), "best.pt")
+            torch.save(model.state_dict(), MODEL / "best.pt")
         else:
             bad_epochs += 1
             if bad_epochs >= PATIENCE:
@@ -83,7 +86,7 @@ def main():
                 break
 
     
-    model.load_state_dict(torch.load("best.pt"))
+    model.load_state_dict(torch.load(MODEL / "best.pt", map_location=DEVICE))
     t_macro, t_aucs = evaluate(model, te)
     print(f"\nTEST macro-AUC: {t_macro:.4f}")
     for c, a in t_aucs:
