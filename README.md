@@ -10,6 +10,7 @@ Pipeline:
 
 1. Clone into [https://github.com/alwriza/rayheart.git](https://github.com/alwriza/rayheart.git)  
 2. Ensure your machine has all necessary libraries uploaded from the requirements.txt  
+3. Download dataset from the link https://www.kaggle.com/datasets/garethwmch/ptb-xl-1-0-3, unzip it and manually insert it into your local rayheart repo
 3. Run python [dataset.py](http://dataset.py)  
 4. Run python [train.py](http://train.py)   
 5. Run python predict.py  
