@@ -4,8 +4,8 @@ from pathlib import Path
 from tsai.models.XResNet1d import xresnet1d101
 
 BASE_DIR = Path(__file__).resolve().parent
-DATA = BASE_DIR / "processed data"        
-MODEL = BASE_DIR / "trained model"
+DATA = BASE_DIR / "processed_data"        
+MODEL = BASE_DIR / "trained_model"
 
 SUPER = ["NORM", "MI", "STTC", "CD", "HYP"]
 DEVICE = "cuda" if torch.cuda.is_available() else "cpu"
