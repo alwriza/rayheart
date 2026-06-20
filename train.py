@@ -16,6 +16,7 @@ EPOCHS = 50
 BATCH = 128
 LR = 1e-3
 PATIENCE = 8
+THRESHOLD = 0.5     
 
 
 def load_split(name):
@@ -31,7 +32,7 @@ def loader(name, shuffle):
 
 
 def macro_auc(y_true, y_prob):
-   
+
     aucs = []
     for i, c in enumerate(SUPER):
         if y_true[:, i].sum() > 0:
@@ -50,13 +51,41 @@ def evaluate(model, dl):
     return macro_auc(np.concatenate(T), np.concatenate(P))
 
 
+@torch.no_grad()
+def predict(model, dl):
+    """Return (y_true, y_prob) arrays of shape (N, 5)."""
+    model.eval()
+    P, T = [], []
+    for x, y in dl:
+        P.append(torch.sigmoid(model(x.to(DEVICE))).cpu().numpy())
+        T.append(y.numpy())
+    return np.concatenate(T), np.concatenate(P)
+
+
+def full_report(y_true, y_prob, threshold=THRESHOLD):
+    """Per-class AUC, sensitivity, specificity at the given threshold."""
+    y_pred = (y_prob >= threshold).astype(int)
+    rows = []
+    for i, c in enumerate(SUPER):
+        t, p = y_true[:, i], y_pred[:, i]
+        tp = int(((t == 1) & (p == 1)).sum())
+        fn = int(((t == 1) & (p == 0)).sum())
+        tn = int(((t == 0) & (p == 0)).sum())
+        fp = int(((t == 0) & (p == 1)).sum())
+        sens = tp / (tp + fn) if (tp + fn) else float("nan")    # true-positive rate
+        spec = tn / (tn + fp) if (tn + fp) else float("nan")    # true-negative rate
+        auc = roc_auc_score(t, y_prob[:, i]) if t.sum() > 0 else float("nan")
+        rows.append((c, auc, sens, spec))
+    return rows
+
+
 def main():
     tr = loader("train", shuffle=True)
     va = loader("val", shuffle=False)
     te = loader("test", shuffle=False)
 
-    model = xresnet1d101(c_in=12, c_out=5).to(DEVICE)   
-    criterion = nn.BCEWithLogitsLoss()                  
+    model = xresnet1d101(c_in=12, c_out=5).to(DEVICE)
+    criterion = nn.BCEWithLogitsLoss()
     optimizer = torch.optim.AdamW(model.parameters(), lr=LR, weight_decay=1e-4)
     scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(
         optimizer, mode="max", factor=0.5, patience=3
@@ -85,12 +114,16 @@ def main():
                 print(f"early stop at epoch {ep} (best val macro-AUC {best:.4f})")
                 break
 
-    
     model.load_state_dict(torch.load(MODEL / "best.pt", map_location=DEVICE))
-    t_macro, t_aucs = evaluate(model, te)
-    print(f"\nTEST macro-AUC: {t_macro:.4f}")
-    for c, a in t_aucs:
-        print(f"  {c:5s} {a:.4f}")
+    yt, yp = predict(model, te)
+    rows = full_report(yt, yp, THRESHOLD)
+
+    print(f"\nTEST metrics (sensitivity/specificity at threshold {THRESHOLD})")
+    print(f"{'class':6s} {'AUC':>7s} {'Sens':>7s} {'Spec':>7s}")
+    for c, auc, sens, spec in rows:
+        print(f"{c:6s} {auc:7.4f} {sens:7.4f} {spec:7.4f}")
+    print(f"{'MACRO':6s} {np.nanmean([r[1] for r in rows]):7.4f} "
+          f"{np.nanmean([r[2] for r in rows]):7.4f} {np.nanmean([r[3] for r in rows]):7.4f}")
 
 
 if __name__ == "__main__":
