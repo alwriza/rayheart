@@ -1,16 +1,7 @@
-﻿In order to run the scripts on your machine, please ensure that the following libraries are pre-installed:
-
-
-Torch 2.7.1
-Tsai 0.4.1 (for the resnet model)        
-Numpy 2.4.3
-Pandas 3.0.1
-Wfdb 4.3.1            
-Scikit-learn 1.8.0   
-Matplotlib 3.10.8     
-
-
-A command to install all of them: 
-
-
-pip install torch==2.7.1 tsai==0.4.1 numpy==2.4.3 pandas==3.0.1 wfdb==4.3.1 scikit-learn==1.8.0 matplotlib==3.10.8
+torch==2.7.1
+tsai==0.4.1  # used by the ResNet model
+numpy==2.4.3
+pandas==3.0.1
+wfdb==4.3.1
+scikit-learn==1.8.0
+matplotlib==3.10.8
